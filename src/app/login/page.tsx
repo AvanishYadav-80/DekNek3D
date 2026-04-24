@@ -40,12 +40,14 @@ export default function Login() {
         const result = await getRedirectResult(auth);
         if (result?.user) {
           const user = result.user;
-          await setDoc(doc(db, "users", user.uid), {
+          // Fire and forget Firestore update - don't let it block the redirect
+          setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             displayName: user.displayName || "Google Creator",
             email: user.email,
             createdAt: new Date().toISOString()
-          }, { merge: true });
+          }, { merge: true }).catch(err => console.error("Firestore user sync failed:", err));
+          
           router.push("/dashboard");
         }
       } catch (err: any) {
@@ -81,12 +83,13 @@ export default function Login() {
         const userCredential = await signInWithPopup(auth, provider);
         const user = userCredential.user;
 
-        await setDoc(doc(db, "users", user.uid), {
+        // Fire and forget Firestore update
+        setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           displayName: user.displayName || "Google Creator",
           email: user.email,
           createdAt: new Date().toISOString()
-        }, { merge: true });
+        }, { merge: true }).catch(err => console.error("Firestore user sync failed:", err));
 
         router.push("/dashboard");
       } catch (popupErr: any) {
