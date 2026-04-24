@@ -38,6 +38,9 @@ export default function Dashboard() {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (!user) {
         router.push("/login");
+      } else if (!user.emailVerified) {
+        // Redirect to signup page where the verification message is shown
+        router.push("/signup");
       } else {
         setUser(user);
         setLoading(false);
