@@ -89,7 +89,7 @@ export default function Signup() {
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">Check your inbox</h2>
           <p className="text-white/60 mb-8 leading-relaxed">
-            We've sent a verification link to <strong className="text-white">{email}</strong>. Please click the link to verify your account and then log in.
+            We&apos;ve sent a verification link to <strong className="text-white">{email}</strong>. Please click the link to verify your account and then log in.
           </p>
           <Link href="/login" className="block w-full py-4 rounded-xl text-white font-semibold transition-all hover:bg-white/5 border border-white/10">
             Return to Login
