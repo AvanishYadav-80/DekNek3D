@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { auth, db } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -18,18 +18,6 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && !user.emailVerified) {
-        setVerificationSent(true);
-        setEmail(user.email || "");
-      } else if (user && user.emailVerified) {
-        router.push("/dashboard");
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,17 +91,9 @@ export default function Signup() {
           <p className="text-white/60 mb-8 leading-relaxed">
             We&apos;ve sent a verification link to <strong className="text-white">{email}</strong>. Please click the link to verify your account and then log in.
           </p>
-          <button 
-            onClick={() => {
-              signOut(auth);
-              setVerificationSent(false);
-              router.push("/login");
-            }}
-            className="block w-full py-4 rounded-xl text-white font-semibold transition-all hover:bg-white/5 border border-white/10 cursor-pointer"
-            style={{ background: 'none' }}
-          >
+          <Link href="/login" className="block w-full py-4 rounded-xl text-white font-semibold transition-all hover:bg-white/5 border border-white/10">
             Return to Login
-          </button>
+          </Link>
         </motion.div>
       </div>
     );
