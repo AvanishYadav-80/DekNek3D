@@ -7,6 +7,7 @@ import {
   signInWithPopup, 
   signInWithRedirect, 
   getRedirectResult, 
+  onAuthStateChanged,
   GoogleAuthProvider 
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -24,8 +25,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
-  // Handle redirect result on component mount
+  // Handle auth state and redirect result
   useEffect(() => {
+    // 1. Listen for auth state changes (handles popup and existing sessions)
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push("/dashboard");
+      }
+    });
+
+    // 2. Check for redirect results (handles coming back from Google redirect)
     const checkRedirect = async () => {
       try {
         const result = await getRedirectResult(auth);
@@ -44,7 +53,9 @@ export default function Login() {
         setError(err.message);
       }
     };
+
     checkRedirect();
+    return () => unsubscribe();
   }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
