@@ -35,18 +35,26 @@ export default function Dashboard() {
   useEffect(() => {
     let unsubscribeSnapshot: () => void;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (!user) {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
         router.push("/login");
-      } else if (!user.emailVerified) {
-        // Redirect to signup page where the verification message is shown
-        router.push("/signup");
       } else {
-        setUser(user);
-        setLoading(false);
+        // Force a server check of the verification status
+        try {
+          await currentUser.reload();
+        } catch (e) {
+          console.error("Auth reload failed", e);
+        }
+
+        const freshUser = auth.currentUser;
+        if (freshUser && !freshUser.emailVerified) {
+          router.push("/signup");
+        } else {
+          setUser(freshUser);
+          setLoading(false);
 
         setIsFetchingAssets(true);
-        const q = query(collection(db, "assets"), where("userId", "==", user.uid));
+        const q = query(collection(db, "assets"), where("userId", "==", freshUser.uid));
         
         // Listen to real-time updates. This provides instant loading from cache!
         unsubscribeSnapshot = onSnapshot(q, (snapshot) => {

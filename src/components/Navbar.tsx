@@ -12,8 +12,18 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Force reload to get the absolute latest verification status
+        try {
+          await user.reload();
+        } catch (e) {
+          console.error("User reload failed", e);
+        }
+        setUser({ ...auth.currentUser } as User);
+      } else {
+        setUser(null);
+      }
     });
 
     const handleScroll = () => {
