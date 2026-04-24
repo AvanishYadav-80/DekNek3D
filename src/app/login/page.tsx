@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 import { auth, db } from "@/lib/firebase";
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { 
+  signInWithEmailAndPassword, 
+  signInWithPopup, 
+  signInWithRedirect, 
+  getRedirectResult, 
+  GoogleAuthProvider 
+} from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Hexagon, ArrowRight, Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -16,6 +23,29 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+
+  // Handle redirect result on component mount
+  useEffect(() => {
+    const checkRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          const user = result.user;
+          await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            displayName: user.displayName || "Google Creator",
+            email: user.email,
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+          router.push("/dashboard");
+        }
+      } catch (err: any) {
+        console.error("Redirect Error:", err);
+        setError(err.message);
+      }
+    };
+    checkRedirect();
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,18 +65,27 @@ export default function Login() {
       setLoading(true);
       setError("");
       const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
+      
+      try {
+        const userCredential = await signInWithPopup(auth, provider);
+        const user = userCredential.user;
 
-      // Ensure they have a user document
-      setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        displayName: user.displayName || "Google Creator",
-        email: user.email,
-        createdAt: new Date().toISOString()
-      }, { merge: true }).catch(console.error);
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          displayName: user.displayName || "Google Creator",
+          email: user.email,
+          createdAt: new Date().toISOString()
+        }, { merge: true });
 
-      router.push("/dashboard");
+        router.push("/dashboard");
+      } catch (popupErr: any) {
+        // If popup is blocked, fallback to redirect
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupErr;
+        }
+      }
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
